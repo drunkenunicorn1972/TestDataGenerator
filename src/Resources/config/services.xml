@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- Gemini API Client -->
+        <service id="TestDataGenerator\Service\GeminiClient" class="TestDataGenerator\Service\GeminiClient">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
+
+        <!-- Data Importer Service -->
+        <service id="TestDataGenerator\Service\DataImporter" class="TestDataGenerator\Service\DataImporter">
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="property_group_option.repository"/>
+            <argument type="service" id="media.repository"/>
+            <argument type="service" id="media_folder.repository"/>
+            <argument type="service" id="product_media.repository"/>
+            <argument type="service" id="tax.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Media\File\FileSaver"/>
+            <argument type="service" id="TestDataGenerator\Service\GeminiClient"/>
+            <argument type="service" id="logger"/>
+        </service>
+
+        <!-- Background task Handler -->
+        <service id="TestDataGenerator\Message\GenerateTestDataHandler" class="TestDataGenerator\Message\GenerateTestDataHandler">
+            <argument type="service" id="TestDataGenerator\Service\DataImporter"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <tag name="messenger.message_handler"/>
+        </service>
+
+        <!-- Generator Controller (API Endpoint) -->
+        <service id="TestDataGenerator\Controller\GeneratorController" class="TestDataGenerator\Controller\GeneratorController" public="true">
+            <argument type="service" id="Symfony\Component\Messenger\MessageBusInterface"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+    </services>
+</container>

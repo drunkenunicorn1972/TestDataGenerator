@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/test-data-generator-e8KdU8_7.js",
+    "name": "test-data-generator",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/test-data-generator-qClVWyKb.css"
+    ]
+  }
+}

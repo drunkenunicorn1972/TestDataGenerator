@@ -1,0 +1,25 @@
+{
+    "test-data-generator": {
+        "general": {
+            "mainMenuItemGeneral": "Gemini Daten-Generator",
+            "descriptionText": "Generieren Sie Produkte, Kategorien und Bilder mit der Google Gemini-API.",
+            "title": "Gemini Testdaten-Generator",
+            "subtitle": "Einfaches Erstellen von hochwertigen Testdaten für die Entwicklung",
+            "generateButton": "Testdaten generieren",
+            "generatingButton": "Generiere...",
+            "categoriesCountLabel": "Anzahl der Kategorien",
+            "productsCountLabel": "Anzahl der Produkte",
+            "generateImagesLabel": "Produkt-Coverbilder generieren",
+            "useExistingCategoriesLabel": "Produkte für die bestehende Kategoriestruktur generieren",
+            "createTranslationsOnlyLabel": "Nur Übersetzungen erstellen",
+            "statusTitle": "Generierungsstatus",
+            "statusRunning": "Generierung läuft im Hintergrund. Sie können diese Seite schließen.",
+            "statusSuccess": "Generierung erfolgreich abgeschlossen!",
+            "statusFailed": "Generierung fehlgeschlagen: {error}",
+            "statusIdle": "Bereit. Keine Generierung aktiv.",
+            "apiConfigError": "Bitte konfigurieren Sie Ihren Google Gemini API-Schlüssel in den Plugin-Einstellungen, bevor Sie Daten generieren.",
+            "toastSuccess": "Generierung im Hintergrund gestartet.",
+            "toastError": "Fehler beim Starten der Generierung: {error}"
+        }
+    }
+}

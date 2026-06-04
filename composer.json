@@ -1,0 +1,28 @@
+{
+    "name": "vincentbourgonje/test-data-generator",
+    "description": "Google Gemini powered Test Data Generator for Shopware 6.7",
+    "version": "1.0.2",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vincent Bourgonje"
+        }
+    ],
+    "require": {
+        "shopware/core": "6.7.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "TestDataGenerator\\": "src/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "TestDataGenerator\\TestDataGenerator",
+        "label": {
+            "en-GB": "Gemini Test Data Generator",
+            "nl-NL": "Gemini Test Data Generator",
+            "de-DE": "Gemini Testdaten-Generator"
+        }
+    }
+}

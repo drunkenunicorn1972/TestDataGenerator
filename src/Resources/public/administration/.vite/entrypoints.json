@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/testdatagenerator/administration/",
+  "entryPoints": {
+    "test-data-generator": {
+      "css": [
+        "/bundles/testdatagenerator/administration/assets/test-data-generator-qClVWyKb.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/testdatagenerator/administration/assets/test-data-generator-e8KdU8_7.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

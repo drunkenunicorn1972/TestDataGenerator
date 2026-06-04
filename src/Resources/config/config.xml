@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Google Gemini Settings</title>
+        <title lang="de-DE">Google Gemini Einstellungen</title>
+
+        <input-field type="password">
+            <name>apiKey</name>
+            <label>API Key</label>
+            <label lang="de-DE">API-Schlüssel</label>
+            <helpText>Your Google Gemini API Key from Google AI Studio</helpText>
+        </input-field>
+
+        <input-field type="single-select">
+            <name>llmVersion</name>
+            <label>LLM Model Version</label>
+            <label lang="de-DE">LLM Modellversion</label>
+            <defaultValue>gemini-2.5-flash</defaultValue>
+            <options>
+                <option>
+                    <id>gemini-2.5-flash</id>
+                    <name>Gemini 2.5 Flash (Recommended)</name>
+                </option>
+                <option>
+                    <id>gemini-2.5-pro</id>
+                    <name>Gemini 2.5 Pro</name>
+                </option>
+                <option>
+                    <id>gemini-1.5-flash</id>
+                    <name>Gemini 1.5 Flash</name>
+                </option>
+                <option>
+                    <id>gemini-1.5-pro</id>
+                    <name>Gemini 1.5 Pro</name>
+                </option>
+            </options>
+        </input-field>
+
+        <!-- Hidden status field to track background tasks -->
+        <input-field type="text">
+            <name>status</name>
+            <label>Generation Status</label>
+            <disabled>true</disabled>
+        </input-field>
+    </card>
+</config>

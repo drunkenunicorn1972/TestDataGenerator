@@ -1,0 +1,116 @@
+.test-data-generator-index {
+    .config-alert {
+        margin-bottom: 20px;
+    }
+
+    .test-data-generator-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 500px;
+        padding: 10px 0;
+    }
+
+    .generator-actions {
+        margin-top: 10px;
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .status-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border-radius: 6px;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+
+        &.status-running {
+            background-color: #fff9db;
+            border-color: #ffe066;
+            .indicator-dot {
+                background-color: #f59f00;
+                box-shadow: 0 0 0 0 rgba(245, 159, 0, 0.4);
+                animation: pulse 1.5s infinite;
+            }
+            .status-text {
+                color: #856404;
+            }
+        }
+
+        &.status-success {
+            background-color: #ebfbee;
+            border-color: #b2f2bb;
+            .indicator-dot {
+                background-color: #37b24d;
+            }
+            .status-text {
+                color: #2b8a3e;
+                font-weight: 500;
+            }
+        }
+
+        &.status-failed {
+            background-color: #fff5f5;
+            border-color: #ffc9c9;
+            .indicator-dot {
+                background-color: #f03e3e;
+            }
+            .status-text {
+                color: #c92a2a;
+            }
+        }
+
+        &.status-idle {
+            background-color: #f1f3f5;
+            border-color: #dee2e6;
+            .indicator-dot {
+                background-color: #868e96;
+            }
+            .status-text {
+                color: #495057;
+            }
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .indicator-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-content {
+            flex-grow: 1;
+        }
+
+        .status-text {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 159, 0, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(245, 159, 0, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 159, 0, 0);
+    }
+}
