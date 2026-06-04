@@ -104,16 +104,18 @@ class DataImporter
 
             $categoriesCount = count($categories);
         } else {
-            // Generate categories structure using Gemini with translations
+            // Generate categories structure using Gemini with translations and SEO data
             $translationsProperties = [];
             foreach ($activeLanguages as $langId => $localeCode) {
                 $translationsProperties[$localeCode] = [
                     'type' => 'OBJECT',
                     'properties' => [
                         'name' => ['type' => 'STRING'],
-                        'description' => ['type' => 'STRING']
+                        'description' => ['type' => 'STRING'],
+                        'metaTitle' => ['type' => 'STRING'],
+                        'metaDescription' => ['type' => 'STRING']
                     ],
-                    'required' => ['name', 'description']
+                    'required' => ['name', 'description', 'metaTitle', 'metaDescription']
                 ];
             }
 
@@ -141,8 +143,8 @@ class DataImporter
             $localesList = implode(', ', array_values($activeLanguages));
             $categoriesPrompt = sprintf(
                 "We are setting up a demo store. Generate exactly %d categories for our store.
-                For each category, you must provide the name and description translated into all of the following locales: %s.
-                Ensure translations are high quality, natural, and accurately reflect the same category name and description in each language.",
+                For each category, you must provide the name, description, SEO meta title, and SEO meta description translated into all of the following locales: %s.
+                Ensure translations are high quality, natural, and accurately reflect the same category in each language. The meta title and meta description should be optimized for SEO in each respective language.",
                 $categoriesCount,
                 $localesList
             );
@@ -163,6 +165,8 @@ class DataImporter
                         $translationsPayload[$langId] = [
                             'name' => $catEntry['translations'][$localeCode]['name'],
                             'description' => $catEntry['translations'][$localeCode]['description'],
+                            'metaTitle' => $catEntry['translations'][$localeCode]['metaTitle'],
+                            'metaDescription' => $catEntry['translations'][$localeCode]['metaDescription'],
                         ];
                     }
                 }
@@ -176,6 +180,8 @@ class DataImporter
                 if ($defaultLangId && isset($translationsPayload[$defaultLangId])) {
                     $categoryPayload['name'] = $translationsPayload[$defaultLangId]['name'];
                     $categoryPayload['description'] = $translationsPayload[$defaultLangId]['description'];
+                    $categoryPayload['metaTitle'] = $translationsPayload[$defaultLangId]['metaTitle'];
+                    $categoryPayload['metaDescription'] = $translationsPayload[$defaultLangId]['metaDescription'];
                 }
 
                 if ($rootCategoryId) {
@@ -215,16 +221,22 @@ class DataImporter
             $lastCategoryProducts = 1;
         }
 
-        // Define schema for single-category products generation with translations
+        // Define schema for single-category products generation with translations and SEO data
         $translationsProperties = [];
+        $translationsPropertiesProperties = [];
         foreach ($activeLanguages as $langId => $localeCode) {
             $translationsProperties[$localeCode] = [
                 'type' => 'OBJECT',
                 'properties' => [
                     'name' => ['type' => 'STRING'],
-                    'description' => ['type' => 'STRING']
+                    'description' => ['type' => 'STRING'],
+                    'metaTitle' => ['type' => 'STRING'],
+                    'metaDescription' => ['type' => 'STRING']
                 ],
-                'required' => ['name', 'description']
+                'required' => ['name', 'description', 'metaTitle', 'metaDescription']
+            ];
+            $translationsPropertiesProperties[$localeCode] = [
+                'type' => 'STRING'
             ];
         }
 
@@ -248,13 +260,29 @@ class DataImporter
                                 'items' => [
                                     'type' => 'OBJECT',
                                     'properties' => [
-                                        'groupName' => ['type' => 'STRING'],
+                                        'id' => ['type' => 'STRING'],
+                                        'translations' => [
+                                            'type' => 'OBJECT',
+                                            'properties' => $translationsPropertiesProperties,
+                                            'required' => array_values($activeLanguages)
+                                        ],
                                         'options' => [
                                             'type' => 'ARRAY',
-                                            'items' => ['type' => 'STRING']
+                                            'items' => [
+                                                'type' => 'OBJECT',
+                                                'properties' => [
+                                                    'id' => ['type' => 'STRING'],
+                                                    'translations' => [
+                                                        'type' => 'OBJECT',
+                                                        'properties' => $translationsPropertiesProperties,
+                                                        'required' => array_values($activeLanguages)
+                                                    ]
+                                                ],
+                                                'required' => ['id', 'translations']
+                                            ]
                                         ]
                                     ],
-                                    'required' => ['groupName', 'options']
+                                    'required' => ['id', 'translations', 'options']
                                 ]
                             ],
                             'variants' => [
@@ -267,10 +295,10 @@ class DataImporter
                                             'items' => [
                                                 'type' => 'OBJECT',
                                                 'properties' => [
-                                                    'groupName' => ['type' => 'STRING'],
-                                                    'optionName' => ['type' => 'STRING']
+                                                    'groupId' => ['type' => 'STRING'],
+                                                    'optionId' => ['type' => 'STRING']
                                                 ],
-                                                'required' => ['groupName', 'optionName']
+                                                'required' => ['groupId', 'optionId']
                                             ]
                                         ],
                                         'price' => ['type' => 'NUMBER'],
@@ -305,14 +333,17 @@ class DataImporter
                     Generate exactly %d products for this category.
                     Make sure products are highly relevant to this category.
                     For each product:
-                    - Provide name and description translations for the following locales: %s.
+                    - Provide name, description, SEO meta title, and SEO meta description translations for the following locales under the 'translations' object: %s.
                     - Base Price (float, realistic for this item type, e.g. between 10.0 and 200.0), and Stock (integer, e.g. between 10 and 100).
-                    - Define a 'properties' object containing 1-2 property groups (like 'Color' or 'Size') and their available options (e.g., Color => ['Red', 'Blue']).
-                    - Define a 'variants' array of 2-3 variants. Each variant should specify its 'options' mapping (e.g. Size => 'M', Color => 'Red'), a price (realistic variant price), and stock.
-                    Ensure that product names, descriptions, and properties match realistically.",
+                    - Define a 'properties' array containing 1-2 property groups (like color, size) and their available options.
+                      For both property groups and options, you must provide translations for each of the active locales: %s.
+                      Example property group: id => \"color\", translations => {\"en-GB\": \"Color\", \"de-DE\": \"Farbe\"}, options => [ { id => \"red\", translations => {\"en-GB\": \"Red\", \"de-DE\": \"Rot\"} } ]
+                    - Define a 'variants' array of 2-3 variants. Each variant should specify its 'options' mapping using the respective groupId and optionId strings defined in the properties array, a price, and stock.
+                    Ensure that product names, descriptions, and properties match realistically and translations are high quality, natural, and accurately reflect the same information in each language.",
                     $category['name'],
                     $category['description'] ?? '',
                     $chunkSize,
+                    $localesList,
                     $localesList
                 );
 
@@ -358,19 +389,47 @@ class DataImporter
         Context $context
     ): void {
         // Parse properties and create property groups/options
-        $variantOptionsMap = []; // GroupName -> [OptionName -> OptionId]
+        $variantOptionsMap = []; // GroupId -> [OptionId -> OptionDbId]
         if (!empty($prodData['properties']) && is_array($prodData['properties'])) {
             foreach ($prodData['properties'] as $propGroup) {
-                $groupName = $propGroup['groupName'] ?? null;
+                $groupIdentifier = $propGroup['id'] ?? null;
+                $groupTranslations = $propGroup['translations'] ?? null;
                 $optionsList = $propGroup['options'] ?? null;
-                if (!$groupName || !is_array($optionsList)) {
+                if (!$groupIdentifier || !is_array($groupTranslations) || !is_array($optionsList)) {
                     continue;
                 }
-                $groupId = $this->getOrCreatePropertyGroup($groupName, $context);
-                $variantOptionsMap[$groupName] = [];
-                foreach ($optionsList as $optionName) {
-                    $optionId = $this->getOrCreatePropertyOption($groupId, (string) $optionName, $context);
-                    $variantOptionsMap[$groupName][(string) $optionName] = $optionId;
+
+                // Convert locale-coded keys to language ID keys for our db query/create
+                $groupTransPayload = [];
+                foreach ($activeLanguages as $langId => $localeCode) {
+                    if (isset($groupTranslations[$localeCode])) {
+                        $groupTransPayload[$langId] = [
+                            'name' => $groupTranslations[$localeCode]
+                        ];
+                    }
+                }
+
+                $groupId = $this->getOrCreatePropertyGroup($groupTransPayload, $defaultLangId, $context);
+                $variantOptionsMap[$groupIdentifier] = [];
+
+                foreach ($optionsList as $optionEntry) {
+                    $optionIdentifier = $optionEntry['id'] ?? null;
+                    $optionTranslations = $optionEntry['translations'] ?? null;
+                    if (!$optionIdentifier || !is_array($optionTranslations)) {
+                        continue;
+                    }
+
+                    $optionTransPayload = [];
+                    foreach ($activeLanguages as $langId => $localeCode) {
+                        if (isset($optionTranslations[$localeCode])) {
+                            $optionTransPayload[$langId] = [
+                                'name' => $optionTranslations[$localeCode]
+                            ];
+                        }
+                    }
+
+                    $optionId = $this->getOrCreatePropertyOption($groupId, $optionTransPayload, $defaultLangId, $context);
+                    $variantOptionsMap[$groupIdentifier][$optionIdentifier] = $optionId;
                 }
             }
         }
@@ -381,20 +440,28 @@ class DataImporter
                 $translationsPayload[$langId] = [
                     'name' => $prodData['translations'][$localeCode]['name'],
                     'description' => $prodData['translations'][$localeCode]['description'],
+                    'metaTitle' => $prodData['translations'][$localeCode]['metaTitle'],
+                    'metaDescription' => $prodData['translations'][$localeCode]['metaDescription'],
                 ];
             }
         }
 
         $defaultName = '';
         $defaultDesc = '';
+        $defaultMetaTitle = '';
+        $defaultMetaDesc = '';
         if ($defaultLangId && isset($translationsPayload[$defaultLangId])) {
             $defaultName = $translationsPayload[$defaultLangId]['name'];
             $defaultDesc = $translationsPayload[$defaultLangId]['description'];
+            $defaultMetaTitle = $translationsPayload[$defaultLangId]['metaTitle'];
+            $defaultMetaDesc = $translationsPayload[$defaultLangId]['metaDescription'];
         } else {
             $firstTrans = reset($translationsPayload);
             if ($firstTrans) {
                 $defaultName = $firstTrans['name'];
                 $defaultDesc = $firstTrans['description'];
+                $defaultMetaTitle = $firstTrans['metaTitle'];
+                $defaultMetaDesc = $firstTrans['metaDescription'];
             }
         }
 
@@ -424,13 +491,15 @@ class DataImporter
         if (!empty($defaultName)) {
             $productPayload['name'] = $defaultName;
             $productPayload['description'] = $defaultDesc;
+            $productPayload['metaTitle'] = $defaultMetaTitle;
+            $productPayload['metaDescription'] = $defaultMetaDesc;
         }
 
         // Configure variants options on parent product
         $configuratorSettings = [];
         if (!empty($variantOptionsMap)) {
-            foreach ($variantOptionsMap as $groupName => $options) {
-                foreach ($options as $optionName => $optionId) {
+            foreach ($variantOptionsMap as $groupIdentifier => $options) {
+                foreach ($options as $optionIdentifier => $optionId) {
                     $configuratorSettings[] = [
                         'optionId' => $optionId,
                     ];
@@ -476,11 +545,11 @@ class DataImporter
                 $isValidVariant = true;
 
                 foreach ($variantData['options'] as $optionMapping) {
-                    $groupName = $optionMapping['groupName'] ?? null;
-                    $optionName = $optionMapping['optionName'] ?? null;
-                    if ($groupName && $optionName && isset($variantOptionsMap[$groupName][(string) $optionName])) {
-                        $variantOptionIds[] = ['id' => $variantOptionsMap[$groupName][(string) $optionName]];
-                        $optionSuffix[] = (string) $optionName;
+                    $groupIdentifier = $optionMapping['groupId'] ?? null;
+                    $optionIdentifier = $optionMapping['optionId'] ?? null;
+                    if ($groupIdentifier && $optionIdentifier && isset($variantOptionsMap[$groupIdentifier][$optionIdentifier])) {
+                        $variantOptionIds[] = ['id' => $variantOptionsMap[$groupIdentifier][$optionIdentifier]];
+                        $optionSuffix[] = $optionIdentifier;
                     } else {
                         $isValidVariant = false;
                         break;
@@ -558,7 +627,9 @@ class DataImporter
                     return [
                         'locale' => $locale,
                         'name' => $translation->getName(),
-                        'description' => $translation->getDescription() ?? '',
+                        'description' => method_exists($translation, 'getDescription') ? ($translation->getDescription() ?? '') : '',
+                        'metaTitle' => method_exists($translation, 'getMetaTitle') ? ($translation->getMetaTitle() ?? '') : '',
+                        'metaDescription' => method_exists($translation, 'getMetaDescription') ? ($translation->getMetaDescription() ?? '') : '',
                     ];
                 }
             }
@@ -568,7 +639,9 @@ class DataImporter
             return [
                 'locale' => 'en-GB',
                 'name' => $entity->getName(),
-                'description' => $entity->getDescription() ?? '',
+                'description' => method_exists($entity, 'getDescription') ? ($entity->getDescription() ?? '') : '',
+                'metaTitle' => method_exists($entity, 'getMetaTitle') ? ($entity->getMetaTitle() ?? '') : '',
+                'metaDescription' => method_exists($entity, 'getMetaDescription') ? ($entity->getMetaDescription() ?? '') : '',
             ];
         }
 
@@ -589,19 +662,26 @@ class DataImporter
                 continue;
             }
 
-            $existingLangIds = [];
-            $translations = $category->getTranslations();
-            if ($translations) {
-                foreach ($translations as $translation) {
-                    if (!empty($translation->getName())) {
-                        $existingLangIds[] = $translation->getLanguageId();
-                    }
-                }
-            }
-
             $missingLocales = [];
             foreach ($activeLanguages as $langId => $localeCode) {
-                if (!in_array($langId, $existingLangIds, true)) {
+                $translation = null;
+                $translations = $category->getTranslations();
+                if ($translations) {
+                    foreach ($translations as $t) {
+                        if ($t->getLanguageId() === $langId) {
+                            $translation = $t;
+                            break;
+                        }
+                    }
+                }
+
+                $isMissing = !$translation 
+                    || empty($translation->getName()) 
+                    || empty($translation->getDescription()) 
+                    || empty($translation->getMetaTitle()) 
+                    || empty($translation->getMetaDescription());
+
+                if ($isMissing) {
                     $missingLocales[$langId] = $localeCode;
                 }
             }
@@ -614,6 +694,8 @@ class DataImporter
                         'sourceLocale' => $source['locale'],
                         'sourceName' => $source['name'],
                         'sourceDescription' => $source['description'],
+                        'sourceMetaTitle' => $source['metaTitle'],
+                        'sourceMetaDescription' => $source['metaDescription'],
                         'targetLocales' => array_values($missingLocales),
                         'targetLanguages' => $missingLocales
                     ];
@@ -636,19 +718,26 @@ class DataImporter
 
         $productsToTranslate = [];
         foreach ($products as $product) {
-            $existingLangIds = [];
-            $translations = $product->getTranslations();
-            if ($translations) {
-                foreach ($translations as $translation) {
-                    if (!empty($translation->getName())) {
-                        $existingLangIds[] = $translation->getLanguageId();
-                    }
-                }
-            }
-
             $missingLocales = [];
             foreach ($activeLanguages as $langId => $localeCode) {
-                if (!in_array($langId, $existingLangIds, true)) {
+                $translation = null;
+                $translations = $product->getTranslations();
+                if ($translations) {
+                    foreach ($translations as $t) {
+                        if ($t->getLanguageId() === $langId) {
+                            $translation = $t;
+                            break;
+                        }
+                    }
+                }
+
+                $isMissing = !$translation 
+                    || empty($translation->getName()) 
+                    || empty($translation->getDescription()) 
+                    || empty($translation->getMetaTitle()) 
+                    || empty($translation->getMetaDescription());
+
+                if ($isMissing) {
                     $missingLocales[$langId] = $localeCode;
                 }
             }
@@ -661,6 +750,8 @@ class DataImporter
                         'sourceLocale' => $source['locale'],
                         'sourceName' => $source['name'],
                         'sourceDescription' => $source['description'],
+                        'sourceMetaTitle' => $source['metaTitle'],
+                        'sourceMetaDescription' => $source['metaDescription'],
                         'targetLocales' => array_values($missingLocales),
                         'targetLanguages' => $missingLocales
                     ];
@@ -674,10 +765,128 @@ class DataImporter
                 $this->translateItemsChunk($chunk, $activeLanguages, $this->productRepository, $context);
             }
         }
+
+        // 3. Process Property Groups
+        $criteria = new Criteria();
+        $criteria->addAssociation('translations');
+        $propertyGroups = $this->propertyGroupRepository->search($criteria, $context)->getEntities();
+
+        $groupsToTranslate = [];
+        foreach ($propertyGroups as $group) {
+            $missingLocales = [];
+            foreach ($activeLanguages as $langId => $localeCode) {
+                $translation = null;
+                $translations = $group->getTranslations();
+                if ($translations) {
+                    foreach ($translations as $t) {
+                        if ($t->getLanguageId() === $langId) {
+                            $translation = $t;
+                            break;
+                        }
+                    }
+                }
+
+                $isMissing = !$translation || empty($translation->getName());
+                if ($isMissing) {
+                    $missingLocales[$langId] = $localeCode;
+                }
+            }
+
+            if (!empty($missingLocales)) {
+                $source = $this->getSourceTranslation($group, $activeLanguages);
+                if ($source) {
+                    $groupsToTranslate[] = [
+                        'id' => $group->getId(),
+                        'sourceLocale' => $source['locale'],
+                        'sourceName' => $source['name'],
+                        'sourceDescription' => '',
+                        'sourceMetaTitle' => '',
+                        'sourceMetaDescription' => '',
+                        'targetLocales' => array_values($missingLocales),
+                        'targetLanguages' => $missingLocales
+                    ];
+                }
+            }
+        }
+
+        if (!empty($groupsToTranslate)) {
+            $chunks = array_chunk($groupsToTranslate, 15);
+            foreach ($chunks as $chunk) {
+                $this->translateItemsChunk($chunk, $activeLanguages, $this->propertyGroupRepository, $context);
+            }
+        }
+
+        // 4. Process Property Options
+        $criteria = new Criteria();
+        $criteria->addAssociation('translations');
+        $propertyOptions = $this->propertyGroupOptionRepository->search($criteria, $context)->getEntities();
+
+        $optionsToTranslate = [];
+        foreach ($propertyOptions as $option) {
+            $missingLocales = [];
+            foreach ($activeLanguages as $langId => $localeCode) {
+                $translation = null;
+                $translations = $option->getTranslations();
+                if ($translations) {
+                    foreach ($translations as $t) {
+                        if ($t->getLanguageId() === $langId) {
+                            $translation = $t;
+                            break;
+                        }
+                    }
+                }
+
+                $isMissing = !$translation || empty($translation->getName());
+                if ($isMissing) {
+                    $missingLocales[$langId] = $localeCode;
+                }
+            }
+
+            if (!empty($missingLocales)) {
+                $source = $this->getSourceTranslation($option, $activeLanguages);
+                if ($source) {
+                    $optionsToTranslate[] = [
+                        'id' => $option->getId(),
+                        'sourceLocale' => $source['locale'],
+                        'sourceName' => $source['name'],
+                        'sourceDescription' => '',
+                        'sourceMetaTitle' => '',
+                        'sourceMetaDescription' => '',
+                        'targetLocales' => array_values($missingLocales),
+                        'targetLanguages' => $missingLocales
+                    ];
+                }
+            }
+        }
+
+        if (!empty($optionsToTranslate)) {
+            $chunks = array_chunk($optionsToTranslate, 15);
+            foreach ($chunks as $chunk) {
+                $this->translateItemsChunk($chunk, $activeLanguages, $this->propertyGroupOptionRepository, $context);
+            }
+        }
     }
 
     private function translateItemsChunk(array $chunk, array $activeLanguages, EntityRepository $repository, Context $context): void
     {
+        $hasDescription = ($repository === $this->categoryRepository || $repository === $this->productRepository);
+
+        $transProperties = [
+            'locale' => ['type' => 'STRING'],
+            'name' => ['type' => 'STRING'],
+        ];
+        $transRequired = ['locale', 'name'];
+
+        if ($hasDescription) {
+            $transProperties['description'] = ['type' => 'STRING'];
+            $transProperties['metaTitle'] = ['type' => 'STRING'];
+            $transProperties['metaDescription'] = ['type' => 'STRING'];
+            
+            $transRequired[] = 'description';
+            $transRequired[] = 'metaTitle';
+            $transRequired[] = 'metaDescription';
+        }
+
         $schema = [
             'type' => 'OBJECT',
             'properties' => [
@@ -691,12 +900,8 @@ class DataImporter
                                 'type' => 'ARRAY',
                                 'items' => [
                                     'type' => 'OBJECT',
-                                    'properties' => [
-                                        'locale' => ['type' => 'STRING'],
-                                        'name' => ['type' => 'STRING'],
-                                        'description' => ['type' => 'STRING']
-                                    ],
-                                    'required' => ['locale', 'name', 'description']
+                                    'properties' => $transProperties,
+                                    'required' => $transRequired
                                 ]
                             ]
                         ],
@@ -707,22 +912,47 @@ class DataImporter
             'required' => ['items']
         ];
 
-        $prompt = "You are a professional translator. Translate the following items into their missing target locales.
-For each item, we provide its ID, the source name and description (with its locale), and the target locales you must translate it into.
-Provide the translated name and description for each target locale requested.
+        if ($hasDescription) {
+            $prompt = "You are a professional translator and SEO optimizer.
+For each item, we provide its ID, the source name, description, meta title, and meta description (with its source locale), and the target locales.
+Translate the name and description into each target locale.
+Also, translate or generate/fill high-quality SEO meta titles and meta descriptions for each target locale.
+If the source meta title or description is missing, generate appropriate SEO meta title and description based on the name and description in that target language.
+Provide the results in the requested JSON structure.
 
 Items:
 ";
+        } else {
+            $prompt = "You are a professional translator.
+For each item, we provide its ID, the source name (with its source locale), and the target locales you must translate it into.
+Provide the translated name for each target locale requested.
+Provide the results in the requested JSON structure.
+
+Items:
+";
+        }
 
         foreach ($chunk as $item) {
-            $prompt .= sprintf(
-                "Item ID: %s\nSource Locale: %s\nSource Name: %s\nSource Description: %s\nTranslate to Locales: %s\n---\n",
-                $item['id'],
-                $item['sourceLocale'],
-                $item['sourceName'],
-                $item['sourceDescription'],
-                implode(', ', $item['targetLocales'])
-            );
+            if ($hasDescription) {
+                $prompt .= sprintf(
+                    "Item ID: %s\nSource Locale: %s\nSource Name: %s\nSource Description: %s\nSource Meta Title: %s\nSource Meta Description: %s\nTranslate to Locales: %s\n---\n",
+                    $item['id'],
+                    $item['sourceLocale'],
+                    $item['sourceName'],
+                    $item['sourceDescription'] ?? '',
+                    $item['sourceMetaTitle'] ?? '',
+                    $item['sourceMetaDescription'] ?? '',
+                    implode(', ', $item['targetLocales'])
+                );
+            } else {
+                $prompt .= sprintf(
+                    "Item ID: %s\nSource Locale: %s\nSource Name: %s\nTranslate to Locales: %s\n---\n",
+                    $item['id'],
+                    $item['sourceLocale'],
+                    $item['sourceName'],
+                    implode(', ', $item['targetLocales'])
+                );
+            }
         }
 
         try {
@@ -757,9 +987,13 @@ Items:
                     $langId = array_search($locale, $matchingItem['targetLanguages'], true);
                     if ($langId) {
                         $translationsPayload[$langId] = [
-                            'name' => $trans['name'],
-                            'description' => $trans['description']
+                            'name' => $trans['name']
                         ];
+                        if ($hasDescription) {
+                            $translationsPayload[$langId]['description'] = $trans['description'] ?? '';
+                            $translationsPayload[$langId]['metaTitle'] = $trans['metaTitle'] ?? '';
+                            $translationsPayload[$langId]['metaDescription'] = $trans['metaDescription'] ?? '';
+                        }
                     }
                 }
 
@@ -845,10 +1079,12 @@ Items:
         return $folder ? $folder->getId() : null;
     }
 
-    private function getOrCreatePropertyGroup(string $name, Context $context): string
+    private function getOrCreatePropertyGroup(array $translations, ?string $defaultLangId, Context $context): string
     {
+        $defaultName = $translations[$defaultLangId]['name'] ?? reset($translations)['name'];
+
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('name', $name));
+        $criteria->addFilter(new EqualsFilter('name', $defaultName));
         $group = $this->propertyGroupRepository->search($criteria, $context)->first();
 
         if ($group) {
@@ -856,9 +1092,18 @@ Items:
         }
 
         $id = Uuid::randomHex();
+        
+        $translationsPayload = [];
+        foreach ($translations as $langId => $trans) {
+            $translationsPayload[$langId] = [
+                'name' => $trans['name'],
+            ];
+        }
+
         $this->propertyGroupRepository->create([[
             'id' => $id,
-            'name' => $name,
+            'translations' => $translationsPayload,
+            'name' => $defaultName,
             'displayType' => 'text',
             'sortingType' => 'alphanumeric',
         ]], $context);
@@ -866,11 +1111,13 @@ Items:
         return $id;
     }
 
-    private function getOrCreatePropertyOption(string $groupId, string $name, Context $context): string
+    private function getOrCreatePropertyOption(string $groupId, array $translations, ?string $defaultLangId, Context $context): string
     {
+        $defaultName = $translations[$defaultLangId]['name'] ?? reset($translations)['name'];
+
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('groupId', $groupId));
-        $criteria->addFilter(new EqualsFilter('name', $name));
+        $criteria->addFilter(new EqualsFilter('name', $defaultName));
         $option = $this->propertyGroupOptionRepository->search($criteria, $context)->first();
 
         if ($option) {
@@ -878,10 +1125,19 @@ Items:
         }
 
         $id = Uuid::randomHex();
+        
+        $translationsPayload = [];
+        foreach ($translations as $langId => $trans) {
+            $translationsPayload[$langId] = [
+                'name' => $trans['name'],
+            ];
+        }
+
         $this->propertyGroupOptionRepository->create([[
             'id' => $id,
             'groupId' => $groupId,
-            'name' => $name,
+            'translations' => $translationsPayload,
+            'name' => $defaultName,
         ]], $context);
 
         return $id;

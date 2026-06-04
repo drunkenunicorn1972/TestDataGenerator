@@ -40,5 +40,11 @@
             </call>
         </service>
 
+        <!-- Test Data Generation Command -->
+        <service id="TestDataGenerator\Command\GenerateTestDataCommand" class="TestDataGenerator\Command\GenerateTestDataCommand">
+            <argument type="service" id="TestDataGenerator\Service\DataImporter"/>
+            <tag name="console.command"/>
+        </service>
+
     </services>
 </container>

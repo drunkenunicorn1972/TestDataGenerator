@@ -55,6 +55,7 @@ class GeminiClient
                     'Content-Type' => 'application/json',
                 ],
                 'timeout' => 90.0,
+                'force_ip_resolve' => 'v4',
             ]);
         } catch (\GuzzleHttp\Exception\RequestException $e) {
             $responseBody = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : '';
@@ -106,6 +107,7 @@ class GeminiClient
                     'Content-Type' => 'application/json',
                 ],
                 'timeout' => 60.0,
+                'force_ip_resolve' => 'v4',
             ]);
         } catch (\GuzzleHttp\Exception\RequestException $e) {
             $responseBody = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : '';
@@ -126,6 +128,6 @@ class GeminiClient
             return base64_decode($body['predictions'][0]['image']['imageBytes']);
         }
 
-        throw new \Exception('Invalid response structure from Gemini Imagen API. Response: ' . json_encode($body));
+        throw new \Exception('Invalid response structure from Gemini Imagen API.');
     }
 }
