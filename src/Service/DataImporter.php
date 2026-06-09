@@ -55,8 +55,15 @@ class DataImporter
         $this->logger = $logger;
     }
 
-    public function importData(int $categoriesCount, int $productsCount, bool $generateImages, bool $useExistingCategories, bool $createTranslationsOnly, Context $context): void
-    {
+    public function importData(
+        int $categoriesCount,
+        int $productsCount,
+        bool $generateImages,
+        bool $useExistingCategories,
+        bool $createTranslationsOnly,
+        Context $context,
+        ?string $selectedCategoryId = null
+    ): void {
         // 1. Resolve default navigation category (root category of the first active Sales Channel)
         $rootCategoryId = $this->resolveNavigationRootCategoryId($context);
 
@@ -91,6 +98,16 @@ class DataImporter
                 if ($category->getId() === $rootCategoryId || $category->getParentId() === null) {
                     continue;
                 }
+
+                // Filter by selected category (only descendants)
+                if ($selectedCategoryId) {
+                    $path = $category->getPath() ?? '';
+                    $parentIds = array_filter(explode('|', $path));
+                    if (!in_array($selectedCategoryId, $parentIds, true) && $category->getParentId() !== $selectedCategoryId) {
+                        continue;
+                    }
+                }
+
                 $categories[] = [
                     'id' => $category->getId(),
                     'name' => $category->getName(),

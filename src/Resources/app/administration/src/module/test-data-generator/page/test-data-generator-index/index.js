@@ -5,7 +5,8 @@ Shopware.Component.register('test-data-generator-index', {
     template,
 
     inject: [
-        'systemConfigApiService'
+        'systemConfigApiService',
+        'repositoryFactory'
     ],
 
     data() {
@@ -18,7 +19,9 @@ Shopware.Component.register('test-data-generator-index', {
             isLoading: false,
             status: '',
             apiKey: '',
-            statusTimer: null
+            statusTimer: null,
+            categoryCollection: null,
+            selectedCategoryId: null
         };
     },
 
@@ -69,6 +72,7 @@ Shopware.Component.register('test-data-generator-index', {
 
     methods: {
         createdComponent() {
+            this.categoryCollection = this.getEmptyCategoryCollection();
             this.loadConfig();
             // Poll generation status
             this.statusTimer = setInterval(() => {
@@ -114,7 +118,8 @@ Shopware.Component.register('test-data-generator-index', {
                 productsCount: this.productsCount,
                 generateImages: this.generateImages,
                 useExistingCategories: this.useExistingCategories,
-                createTranslationsOnly: this.createTranslationsOnly
+                createTranslationsOnly: this.createTranslationsOnly,
+                selectedCategoryId: this.selectedCategoryId
             })
             .then(() => {
                 this.createNotificationSuccess({
@@ -133,6 +138,23 @@ Shopware.Component.register('test-data-generator-index', {
             .finally(() => {
                 this.isLoading = false;
             });
+        },
+
+        getEmptyCategoryCollection() {
+            const categoryRepository = this.repositoryFactory.create('category');
+            return new Shopware.Data.EntityCollection(
+                categoryRepository.route,
+                categoryRepository.entityName,
+                Shopware.Context.api
+            );
+        },
+
+        onCategorySelected(category) {
+            this.selectedCategoryId = category.id;
+        },
+
+        onCategoryRemoved() {
+            this.selectedCategoryId = null;
         }
     },
 

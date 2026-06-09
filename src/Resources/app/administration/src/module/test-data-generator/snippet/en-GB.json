@@ -19,7 +19,8 @@
             "statusIdle": "Ready. No generation active.",
             "apiConfigError": "Please configure your Google Gemini API Key in the plugin settings before generating data.",
             "toastSuccess": "Generation started in the background.",
-            "toastError": "Error starting generation: {error}"
+            "toastError": "Error starting generation: {error}",
+            "placeholderCategory": "Select a category to limit product generation to its children (optional)..."
         }
     }
 }

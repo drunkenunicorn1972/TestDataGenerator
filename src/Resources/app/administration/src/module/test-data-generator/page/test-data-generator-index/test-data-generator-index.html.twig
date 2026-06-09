@@ -23,6 +23,15 @@
                             :label="$tc('test-data-generator.general.useExistingCategoriesLabel')"
                         />
 
+                        <sw-category-tree-field
+                            v-if="useExistingCategories"
+                            :categories-collection="categoryCollection"
+                            single-select
+                            :placeholder="$tc('test-data-generator.general.placeholderCategory')"
+                            @selection-add="onCategorySelected"
+                            @selection-remove="onCategoryRemoved"
+                        />
+
                         <sw-number-field
                             v-if="!useExistingCategories"
                             v-model="categoriesCount"

@@ -21,7 +21,7 @@ class GeminiClient
         $apiKey = (string) $this->systemConfig->get('TestDataGenerator.config.apiKey');
         $model = (string) $this->systemConfig->get('TestDataGenerator.config.llmVersion');
         if (empty($model)) {
-            $model = 'gemini-2.5-flash';
+            $model = 'gemini-3.5-flash';
         }
 
         if (empty($apiKey)) {
@@ -67,7 +67,7 @@ class GeminiClient
         }
 
         $body = json_decode($response->getBody()->getContents(), true);
-        
+
         if (isset($body['candidates'][0]['content']['parts'][0]['text'])) {
             return $body['candidates'][0]['content']['parts'][0]['text'];
         }
@@ -83,20 +83,23 @@ class GeminiClient
         }
 
         $url = sprintf(
-            'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=%s',
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=%s',
             $apiKey
         );
 
         $payload = [
-            'instances' => [
+            'contents' => [
                 [
-                    'prompt' => $prompt,
+                    'parts' => [
+                        ['text' => $prompt]
+                    ]
                 ]
             ],
-            'parameters' => [
-                'sampleCount' => 1,
-                'outputMimeType' => 'image/jpeg',
-                'aspectRatio' => '1:1',
+            'generationConfig' => [
+                'responseModalities' => ['IMAGE'],
+                'imageConfig' => [
+                    'aspectRatio' => '1:1',
+                ]
             ]
         ];
 
@@ -119,7 +122,15 @@ class GeminiClient
         }
 
         $body = json_decode($response->getBody()->getContents(), true);
-        
+
+        if (isset($body['candidates'][0]['content']['parts'])) {
+            foreach ($body['candidates'][0]['content']['parts'] as $part) {
+                if (isset($part['inlineData']['data'])) {
+                    return base64_decode($part['inlineData']['data']);
+                }
+            }
+        }
+
         if (isset($body['predictions'][0]['bytesBase64Encoded'])) {
             return base64_decode($body['predictions'][0]['bytesBase64Encoded']);
         }

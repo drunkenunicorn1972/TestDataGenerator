@@ -31,7 +31,8 @@ class GenerateTestDataHandler
                 $message->isGenerateImages(),
                 $message->isUseExistingCategories(),
                 $message->isCreateTranslationsOnly(),
-                $context
+                $context,
+                $message->getSelectedCategoryId()
             );
 
             $this->systemConfigService->set('TestDataGenerator.config.status', 'success');

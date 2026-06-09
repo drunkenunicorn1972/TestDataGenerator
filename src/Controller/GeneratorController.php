@@ -37,6 +37,7 @@ class GeneratorController extends AbstractController
         $generateImages = isset($data['generateImages']) ? (bool) $data['generateImages'] : false;
         $useExistingCategories = isset($data['useExistingCategories']) ? (bool) $data['useExistingCategories'] : false;
         $createTranslationsOnly = isset($data['createTranslationsOnly']) ? (bool) $data['createTranslationsOnly'] : false;
+        $selectedCategoryId = isset($data['selectedCategoryId']) && !empty($data['selectedCategoryId']) ? (string) $data['selectedCategoryId'] : null;
 
         if (!$createTranslationsOnly && ((!$useExistingCategories && $categoriesCount <= 0) || $productsCount <= 0)) {
             return new JsonResponse(['success' => false, 'message' => 'Invalid count parameters.'], 400);
@@ -47,7 +48,8 @@ class GeneratorController extends AbstractController
             $productsCount,
             $generateImages,
             $useExistingCategories,
-            $createTranslationsOnly
+            $createTranslationsOnly,
+            $selectedCategoryId
         ));
 
         return new JsonResponse([
