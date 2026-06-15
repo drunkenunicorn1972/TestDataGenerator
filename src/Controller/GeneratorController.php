@@ -13,10 +13,21 @@ use TestDataGenerator\Message\GenerateTestDataMessage;
 class GeneratorController extends AbstractController
 {
     private MessageBusInterface $messageBus;
+    private string $environment;
 
-    public function __construct(MessageBusInterface $messageBus)
+    public function __construct(MessageBusInterface $messageBus, string $environment)
     {
         $this->messageBus = $messageBus;
+        $this->environment = $environment;
+    }
+
+    #[Route(path: '/api/test-data-generator/env', name: 'api.test_data_generator.env', methods: ['GET'])]
+    public function getEnv(): JsonResponse
+    {
+        return new JsonResponse([
+            'environment' => $this->environment,
+            'isDev' => $this->environment === 'dev',
+        ]);
     }
 
     #[Route(path: '/api/test-data-generator/generate', name: 'api.test_data_generator.generate', methods: ['POST'], defaults: ['_acl' => ['system.plugin_maintenance']])]
@@ -38,6 +49,11 @@ class GeneratorController extends AbstractController
         $useExistingCategories = isset($data['useExistingCategories']) ? (bool) $data['useExistingCategories'] : false;
         $createTranslationsOnly = isset($data['createTranslationsOnly']) ? (bool) $data['createTranslationsOnly'] : false;
         $selectedCategoryId = isset($data['selectedCategoryId']) && !empty($data['selectedCategoryId']) ? (string) $data['selectedCategoryId'] : null;
+        
+        $deleteTestDataBeforeGeneration = false;
+        if ($this->environment === 'dev') {
+            $deleteTestDataBeforeGeneration = isset($data['deleteTestDataBeforeGeneration']) ? (bool) $data['deleteTestDataBeforeGeneration'] : false;
+        }
 
         if (!$createTranslationsOnly && ((!$useExistingCategories && $categoriesCount <= 0) || $productsCount <= 0)) {
             return new JsonResponse(['success' => false, 'message' => 'Invalid count parameters.'], 400);
@@ -49,7 +65,8 @@ class GeneratorController extends AbstractController
             $generateImages,
             $useExistingCategories,
             $createTranslationsOnly,
-            $selectedCategoryId
+            $selectedCategoryId,
+            $deleteTestDataBeforeGeneration
         ));
 
         return new JsonResponse([

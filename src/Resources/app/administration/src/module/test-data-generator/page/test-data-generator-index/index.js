@@ -21,7 +21,9 @@ Shopware.Component.register('test-data-generator-index', {
             apiKey: '',
             statusTimer: null,
             categoryCollection: null,
-            selectedCategoryId: null
+            selectedCategoryId: null,
+            isDev: false,
+            deleteTestDataBeforeGeneration: false
         };
     },
 
@@ -74,10 +76,20 @@ Shopware.Component.register('test-data-generator-index', {
         createdComponent() {
             this.categoryCollection = this.getEmptyCategoryCollection();
             this.loadConfig();
+            this.loadEnvironment();
             // Poll generation status
             this.statusTimer = setInterval(() => {
                 this.pollStatus();
             }, 3000);
+        },
+
+        loadEnvironment() {
+            const httpClient = Shopware.Application.getContainer('init').httpClient;
+            httpClient.get('/test-data-generator/env')
+                .then((response) => {
+                    this.isDev = !!response.data.isDev;
+                })
+                .catch(() => {});
         },
 
         loadConfig() {
@@ -119,7 +131,8 @@ Shopware.Component.register('test-data-generator-index', {
                 generateImages: this.generateImages,
                 useExistingCategories: this.useExistingCategories,
                 createTranslationsOnly: this.createTranslationsOnly,
-                selectedCategoryId: this.selectedCategoryId
+                selectedCategoryId: this.selectedCategoryId,
+                deleteTestDataBeforeGeneration: this.deleteTestDataBeforeGeneration
             })
             .then(() => {
                 this.createNotificationSuccess({

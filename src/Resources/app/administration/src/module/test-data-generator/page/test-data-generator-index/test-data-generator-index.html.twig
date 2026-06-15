@@ -19,6 +19,12 @@
 
                     <template v-if="!createTranslationsOnly">
                         <sw-switch-field
+                            v-if="isDev"
+                            v-model:value="deleteTestDataBeforeGeneration"
+                            :label="$tc('test-data-generator.general.deleteTestDataBeforeGenerationLabel')"
+                        />
+
+                        <sw-switch-field
                             v-model:value="useExistingCategories"
                             :label="$tc('test-data-generator.general.useExistingCategoriesLabel')"
                         />

@@ -35,6 +35,7 @@
         <!-- Generator Controller (API Endpoint) -->
         <service id="TestDataGenerator\Controller\GeneratorController" class="TestDataGenerator\Controller\GeneratorController" public="true">
             <argument type="service" id="Symfony\Component\Messenger\MessageBusInterface"/>
+            <argument>%kernel.environment%</argument>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>

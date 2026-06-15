@@ -12,6 +12,7 @@ class GenerateTestDataMessage implements AsyncMessageInterface
     private bool $useExistingCategories;
     private bool $createTranslationsOnly;
     private ?string $selectedCategoryId;
+    private bool $deleteTestDataBeforeGeneration;
 
     public function __construct(
         int $categoriesCount,
@@ -19,7 +20,8 @@ class GenerateTestDataMessage implements AsyncMessageInterface
         bool $generateImages,
         bool $useExistingCategories,
         bool $createTranslationsOnly = false,
-        ?string $selectedCategoryId = null
+        ?string $selectedCategoryId = null,
+        bool $deleteTestDataBeforeGeneration = false
     ) {
         $this->categoriesCount = $categoriesCount;
         $this->productsCount = $productsCount;
@@ -27,6 +29,7 @@ class GenerateTestDataMessage implements AsyncMessageInterface
         $this->useExistingCategories = $useExistingCategories;
         $this->createTranslationsOnly = $createTranslationsOnly;
         $this->selectedCategoryId = $selectedCategoryId;
+        $this->deleteTestDataBeforeGeneration = $deleteTestDataBeforeGeneration;
     }
 
     public function getCategoriesCount(): int
@@ -57,5 +60,10 @@ class GenerateTestDataMessage implements AsyncMessageInterface
     public function getSelectedCategoryId(): ?string
     {
         return $this->selectedCategoryId;
+    }
+
+    public function isDeleteTestDataBeforeGeneration(): bool
+    {
+        return $this->deleteTestDataBeforeGeneration;
     }
 }

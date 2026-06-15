@@ -64,8 +64,12 @@ class DataImporter
         bool $useExistingCategories,
         bool $createTranslationsOnly,
         Context $context,
-        ?string $selectedCategoryId = null
+        ?string $selectedCategoryId = null,
+        bool $deleteTestDataBeforeGeneration = false
     ): void {
+        if ($deleteTestDataBeforeGeneration) {
+            $this->deleteTestData($context);
+        }
         // 1. Resolve default navigation category (root category of the first active Sales Channel)
         $rootCategoryId = $this->resolveNavigationRootCategoryId($context);
 
@@ -95,18 +99,40 @@ class DataImporter
             $criteria->addFilter(new EqualsFilter('active', true));
             $allActiveCategories = $this->categoryRepository->search($criteria, $context);
 
+            $hasChildCategories = false;
+            if ($selectedCategoryId) {
+                foreach ($allActiveCategories as $category) {
+                    if ($category->getParentId() === $selectedCategoryId) {
+                        $hasChildCategories = true;
+                        break;
+                    }
+                    $path = $category->getPath() ?? '';
+                    $parentIds = array_filter(explode('|', $path));
+                    if (in_array($selectedCategoryId, $parentIds, true)) {
+                        $hasChildCategories = true;
+                        break;
+                    }
+                }
+            }
+
             foreach ($allActiveCategories as $category) {
                 // Exclude root navigation category and any category without parent (system categories)
                 if ($category->getId() === $rootCategoryId || $category->getParentId() === null) {
                     continue;
                 }
 
-                // Filter by selected category (only descendants)
+                // Filter by selected category
                 if ($selectedCategoryId) {
-                    $path = $category->getPath() ?? '';
-                    $parentIds = array_filter(explode('|', $path));
-                    if (!in_array($selectedCategoryId, $parentIds, true) && $category->getParentId() !== $selectedCategoryId) {
-                        continue;
+                    if ($hasChildCategories) {
+                        $path = $category->getPath() ?? '';
+                        $parentIds = array_filter(explode('|', $path));
+                        if (!in_array($selectedCategoryId, $parentIds, true) && $category->getParentId() !== $selectedCategoryId) {
+                            continue;
+                        }
+                    } else {
+                        if ($category->getId() !== $selectedCategoryId) {
+                            continue;
+                        }
                     }
                 }
 
@@ -354,9 +380,13 @@ class DataImporter
                     For each product:
                     - Provide name, description, SEO meta title, and SEO meta description translations for the following locales under the 'translations' object: %s.
                     - Base Price (float, realistic for this item type, e.g. between 10.0 and 200.0), and Stock (integer, e.g. between 10 and 100).
-                    - Define a 'properties' array containing 1-2 property groups (like color, size) and their available options.
+                    - Define a 'properties' array containing 1-2 property groups and their available options.
                       For both property groups and options, you must provide translations for each of the active locales: %s.
                       Example property group: id => \"color\", translations => {\"en-GB\": \"Color\", \"de-DE\": \"Farbe\"}, options => [ { id => \"red\", translations => {\"en-GB\": \"Red\", \"de-DE\": \"Rot\"} } ]
+                    - GUIDELINES FOR PROPERTY GROUPS:
+                      * Only use 'Size' (or 'Größe' in German) as a property group name for standard apparel/clothing sizes (e.g. S, M, L, XL, XXL).
+                      * Do NOT use the generic name 'Size' (or 'Größe') for physical dimensions, lengths, capacities, or measurements (e.g. '1 meter', '2 meter', '500ml', '15.6 inch'). Instead, use a clear, descriptive property group name that exactly represents the dimension (e.g. 'Length', 'Cable Length', 'Volume', 'Screen Size', 'Height').
+                      * Ensure group names and option names are consistently capitalized (use proper Title Case, e.g. 'Size' instead of 'size', 'Length' instead of 'length').
                     - Define a 'variants' array of 2-3 variants. Each variant should specify its 'options' mapping using the respective groupId and optionId strings defined in the properties array, a price, and stock.
                     Ensure that product names, descriptions, and properties match realistically and translations are high quality, natural, and accurately reflect the same information in each language.",
                     $category['name'],
@@ -1100,7 +1130,7 @@ Items:
 
     private function getOrCreatePropertyGroup(array $translations, ?string $defaultLangId, Context $context): string
     {
-        $defaultName = $translations[$defaultLangId]['name'] ?? reset($translations)['name'];
+        $defaultName = trim($translations[$defaultLangId]['name'] ?? reset($translations)['name']);
 
         if (isset($this->propertyGroupCache[$defaultName])) {
             return $this->propertyGroupCache[$defaultName];
@@ -1139,7 +1169,7 @@ Items:
 
     private function getOrCreatePropertyOption(string $groupId, array $translations, ?string $defaultLangId, Context $context): string
     {
-        $defaultName = $translations[$defaultLangId]['name'] ?? reset($translations)['name'];
+        $defaultName = trim($translations[$defaultLangId]['name'] ?? reset($translations)['name']);
         $cacheKey = $groupId . '_' . $defaultName;
 
         if (isset($this->propertyOptionCache[$cacheKey])) {
@@ -1306,5 +1336,33 @@ Items:
         imagedestroy($im);
 
         return $data;
+    }
+
+    private function deleteTestData(Context $context): void
+    {
+        $this->propertyGroupCache = [];
+        $this->propertyOptionCache = [];
+
+        // 1. Delete all products
+        do {
+            $criteria = new Criteria();
+            $criteria->setLimit(100);
+            $productIds = $this->productRepository->searchIds($criteria, $context)->getIds();
+            if (!empty($productIds)) {
+                $deletePayload = array_map(fn($id) => ['id' => $id], $productIds);
+                $this->productRepository->delete($deletePayload, $context);
+            }
+        } while (!empty($productIds));
+
+        // 2. Delete all property groups
+        do {
+            $criteria = new Criteria();
+            $criteria->setLimit(100);
+            $groupIds = $this->propertyGroupRepository->searchIds($criteria, $context)->getIds();
+            if (!empty($groupIds)) {
+                $deletePayload = array_map(fn($id) => ['id' => $id], $groupIds);
+                $this->propertyGroupRepository->delete($deletePayload, $context);
+            }
+        } while (!empty($groupIds));
     }
 }

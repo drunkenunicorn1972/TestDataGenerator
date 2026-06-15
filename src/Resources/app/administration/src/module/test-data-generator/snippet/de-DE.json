@@ -20,7 +20,8 @@
             "apiConfigError": "Bitte konfigurieren Sie Ihren Google Gemini API-Schlüssel in den Plugin-Einstellungen, bevor Sie Daten generieren.",
             "toastSuccess": "Generierung im Hintergrund gestartet.",
             "toastError": "Fehler beim Starten der Generierung: {error}",
-            "placeholderCategory": "Wählen Sie eine Kategorie, um die Produktgenerierung auf deren Kinder zu beschränken (optional)..."
+            "placeholderCategory": "Wählen Sie eine Kategorie, um die Produktgenerierung auf deren Kinder zu beschränken (optional)...",
+            "deleteTestDataBeforeGenerationLabel": "Alle Produkte und Produkteigenschaften vor der Generierung löschen (nur DEV)"
         }
     }
 }

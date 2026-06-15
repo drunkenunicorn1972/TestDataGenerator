@@ -10,7 +10,8 @@ All heavy generation tasks are processed asynchronously via the background messa
 
 - **Dynamic Category & Product Generation**: Uses Gemini to generate realistic names, descriptions, pricing, stock, properties (e.g. Color, Size), and variant products.
 - **Multilingual Support**: Automatically detects all active languages in the default Sales Channel and generates translations for all of them.
-- **Generate Products for Existing Categories**: Option to generate products dynamically fitted to your existing active category tree.
+- **Generate Products for Existing Categories**: Option to generate products dynamically for child categories of a selected category, automatically falling back to generating directly under the selected category if it has no children.
+- **Clean Test Environments (DEV only)**: Provides a development-only option to clear all products and property groups from the store before starting generation to keep test environments clean.
 - **Translation-Only Mode**: Scans your database for missing translations on existing categories and products, translates them using Gemini, and saves them without overwriting your existing content.
 - **Product Cover Images**: Optionally generates professional studio product cover images using Google Imagen 3 (with automatic pastel GD-generated images as a fallback).
 - **Asynchronous Execution**: Offloads heavy tasks to the Symfony Messenger queue. Users can safely close the administration page while the task executes in the background.
@@ -49,9 +50,10 @@ Open the generator page from **Catalogues > Gemini Data Generator** in the main 
 
 ### Standard Generation
 1. Configure settings such as number of categories, number of products, and whether to generate images.
-2. Click **Generate Test Data**.
-3. A success toast will appear and the status card will change to **Running**.
-4. Run the message queue consumer to execute the task (see below).
+2. If in `dev` mode, toggle **Delete all products and product properties before generation** if you wish to clear existing catalog data first.
+3. Click **Generate Test Data**.
+4. A success toast will appear and the status card will change to **Running**.
+5. Run the message queue consumer to execute the task (see below).
 
 ### Create Translations Only
 1. Toggle the **Create translations only** switch.
