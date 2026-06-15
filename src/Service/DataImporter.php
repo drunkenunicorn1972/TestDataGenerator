@@ -378,7 +378,7 @@ class DataImporter
                     Generate exactly %d products for this category.
                     Make sure products are highly relevant to this category.
                     For each product:
-                    - Provide name, description, SEO meta title, and SEO meta description translations for the following locales under the 'translations' object: %s.
+                    - Provide name, description (MUST be a detailed, high-quality description containing 2-3 paragraphs, formatted with HTML paragraph tags <p>...</p>), SEO meta title, and SEO meta description translations for the following locales under the 'translations' object: %s.
                     - Base Price (float, realistic for this item type, e.g. between 10.0 and 200.0), and Stock (integer, e.g. between 10 and 100).
                     - Define a 'properties' array containing 1-2 property groups and their available options.
                       For both property groups and options, you must provide translations for each of the active locales: %s.
