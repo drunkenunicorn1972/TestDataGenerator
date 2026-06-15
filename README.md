@@ -1,6 +1,6 @@
 # Gemini Test Data Generator
 
-The **Gemini Test Data Generator** is a premium Shopware 6.7 plugin designed to quickly populate development and staging environments with realistic, high-quality test data. It integrates with the **Google Gemini API** for generating categories, products, and variants, and utilizes **Imagen 3** for generating product cover images.
+The **Gemini Test Data Generator** is a premium Shopware 6.7 plugin designed to quickly populate development and staging environments with realistic, high-quality test data. It integrates with the **Google Gemini API** for generating categories, products, and variants, and utilizes **gemini-2.5-flash-image** for generating product cover images.
 
 All heavy generation tasks are processed asynchronously via the background message queue to prevent browser and request timeouts.
 
@@ -13,7 +13,7 @@ All heavy generation tasks are processed asynchronously via the background messa
 - **Generate Products for Existing Categories**: Option to generate products dynamically for child categories of a selected category, automatically falling back to generating directly under the selected category if it has no children.
 - **Clean Test Environments (DEV only)**: Provides a development-only option to clear all products and property groups from the store before starting generation to keep test environments clean.
 - **Translation-Only Mode**: Scans your database for missing translations on existing categories and products, translates them using Gemini, and saves them without overwriting your existing content.
-- **Product Cover Images**: Optionally generates professional studio product cover images using Google Imagen 3 (with automatic pastel GD-generated images as a fallback).
+- **Product Cover Images**: Optionally generates professional studio product cover images using Google's **gemini-2.5-flash-image** (with automatic pastel GD-generated images as a fallback).
 - **Realistic Product Reviews**: Generates 1–10 reviews per product in matching languages, with varied star ratings (1.0 to 5.0) and randomized dates in the past (1 to 60 days) to test sorting and storefront layouts.
 - **Asynchronous Execution**: Offloads heavy tasks to the Symfony Messenger queue. Users can safely close the administration page while the task executes in the background.
 - **Progress Tracking**: Polls the current task status and displays visual feedback (running, completed, or failed with error logs) directly in the Admin panel.
