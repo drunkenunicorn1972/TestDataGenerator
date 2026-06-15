@@ -38,7 +38,7 @@ All heavy generation tasks are processed asynchronously via the background messa
 
 Navigate to **Settings > System > Plugins > Gemini Test Data Generator** in the Shopware Admin:
 - **API Key**: Enter your Google Gemini API Key.
-- **LLM Model**: Select your preferred Gemini model version (default is `gemini-2.5-flash`).
+- **LLM Model**: Select your preferred Gemini model version (e.g. `gemini-3.5-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, or `gemini-1.5-pro`).
 
 ---
 

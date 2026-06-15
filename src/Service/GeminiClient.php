@@ -29,9 +29,8 @@ class GeminiClient
         }
 
         $url = sprintf(
-            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
-            $model,
-            $apiKey
+            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+            $model
         );
 
         $payload = [
@@ -53,6 +52,7 @@ class GeminiClient
                 'json' => $payload,
                 'headers' => [
                     'Content-Type' => 'application/json',
+                    'x-goog-api-key' => $apiKey,
                 ],
                 'timeout' => 90.0,
                 'force_ip_resolve' => 'v4',
@@ -82,10 +82,7 @@ class GeminiClient
             throw new \Exception('Gemini API Key is not configured.');
         }
 
-        $url = sprintf(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=%s',
-            $apiKey
-        );
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent';
 
         $payload = [
             'contents' => [
@@ -108,6 +105,7 @@ class GeminiClient
                 'json' => $payload,
                 'headers' => [
                     'Content-Type' => 'application/json',
+                    'x-goog-api-key' => $apiKey,
                 ],
                 'timeout' => 60.0,
                 'force_ip_resolve' => 'v4',

@@ -26,6 +26,8 @@ class DataImporter
     private FileSaver $fileSaver;
     private GeminiClient $geminiClient;
     private LoggerInterface $logger;
+    private array $propertyGroupCache = [];
+    private array $propertyOptionCache = [];
 
     public function __construct(
         EntityRepository $categoryRepository,
@@ -1100,11 +1102,16 @@ Items:
     {
         $defaultName = $translations[$defaultLangId]['name'] ?? reset($translations)['name'];
 
+        if (isset($this->propertyGroupCache[$defaultName])) {
+            return $this->propertyGroupCache[$defaultName];
+        }
+
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('name', $defaultName));
         $group = $this->propertyGroupRepository->search($criteria, $context)->first();
 
         if ($group) {
+            $this->propertyGroupCache[$defaultName] = $group->getId();
             return $group->getId();
         }
 
@@ -1125,12 +1132,19 @@ Items:
             'sortingType' => 'alphanumeric',
         ]], $context);
 
+        $this->propertyGroupCache[$defaultName] = $id;
+
         return $id;
     }
 
     private function getOrCreatePropertyOption(string $groupId, array $translations, ?string $defaultLangId, Context $context): string
     {
         $defaultName = $translations[$defaultLangId]['name'] ?? reset($translations)['name'];
+        $cacheKey = $groupId . '_' . $defaultName;
+
+        if (isset($this->propertyOptionCache[$cacheKey])) {
+            return $this->propertyOptionCache[$cacheKey];
+        }
 
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('groupId', $groupId));
@@ -1138,6 +1152,7 @@ Items:
         $option = $this->propertyGroupOptionRepository->search($criteria, $context)->first();
 
         if ($option) {
+            $this->propertyOptionCache[$cacheKey] = $option->getId();
             return $option->getId();
         }
 
@@ -1156,6 +1171,8 @@ Items:
             'translations' => $translationsPayload,
             'name' => $defaultName,
         ]], $context);
+
+        $this->propertyOptionCache[$cacheKey] = $id;
 
         return $id;
     }

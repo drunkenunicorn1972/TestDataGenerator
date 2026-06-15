@@ -19,6 +19,10 @@
             <defaultValue>gemini-2.5-flash</defaultValue>
             <options>
                 <option>
+                    <id>gemini-3.5-flash</id>
+                    <name>Gemini 3.5 Flash</name>
+                </option>
+                <option>
                     <id>gemini-2.5-flash</id>
                     <name>Gemini 2.5 Flash (Recommended)</name>
                 </option>

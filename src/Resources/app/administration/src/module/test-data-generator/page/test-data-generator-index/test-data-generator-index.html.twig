@@ -13,13 +13,13 @@
             <sw-card position-identifier="test-data-generator-config" :title="$tc('test-data-generator.general.subtitle')">
                 <div class="test-data-generator-form">
                     <sw-switch-field
-                        v-model="createTranslationsOnly"
+                        v-model:value="createTranslationsOnly"
                         :label="$tc('test-data-generator.general.createTranslationsOnlyLabel')"
                     />
 
                     <template v-if="!createTranslationsOnly">
                         <sw-switch-field
-                            v-model="useExistingCategories"
+                            v-model:value="useExistingCategories"
                             :label="$tc('test-data-generator.general.useExistingCategoriesLabel')"
                         />
 
@@ -34,7 +34,7 @@
 
                         <sw-number-field
                             v-if="!useExistingCategories"
-                            v-model="categoriesCount"
+                            v-model:value="categoriesCount"
                             :label="$tc('test-data-generator.general.categoriesCountLabel')"
                             :min="1"
                             :max="20"
@@ -42,7 +42,7 @@
                         />
 
                         <sw-number-field
-                            v-model="productsCount"
+                            v-model:value="productsCount"
                             :label="$tc('test-data-generator.general.productsCountLabel')"
                             :min="1"
                             :max="500"
@@ -50,7 +50,7 @@
                         />
 
                         <sw-switch-field
-                            v-model="generateImages"
+                            v-model:value="generateImages"
                             :label="$tc('test-data-generator.general.generateImagesLabel')"
                         />
                     </template>

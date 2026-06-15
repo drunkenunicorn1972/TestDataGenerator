@@ -19,7 +19,7 @@ class GeneratorController extends AbstractController
         $this->messageBus = $messageBus;
     }
 
-    #[Route(path: '/api/test-data-generator/generate', name: 'api.test_data_generator.generate', methods: ['POST'])]
+    #[Route(path: '/api/test-data-generator/generate', name: 'api.test_data_generator.generate', methods: ['POST'], defaults: ['_acl' => ['system.plugin_maintenance']])]
     public function generate(Request $request): JsonResponse
     {
         $content = $request->getContent();
