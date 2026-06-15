@@ -26,6 +26,7 @@ class DataImporter
     private FileSaver $fileSaver;
     private GeminiClient $geminiClient;
     private LoggerInterface $logger;
+    private EntityRepository $productReviewRepository;
     private array $propertyGroupCache = [];
     private array $propertyOptionCache = [];
 
@@ -41,7 +42,8 @@ class DataImporter
         EntityRepository $salesChannelRepository,
         FileSaver $fileSaver,
         GeminiClient $geminiClient,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        EntityRepository $productReviewRepository
     ) {
         $this->categoryRepository = $categoryRepository;
         $this->productRepository = $productRepository;
@@ -55,6 +57,7 @@ class DataImporter
         $this->fileSaver = $fileSaver;
         $this->geminiClient = $geminiClient;
         $this->logger = $logger;
+        $this->productReviewRepository = $productReviewRepository;
     }
 
     public function importData(
@@ -65,7 +68,8 @@ class DataImporter
         bool $createTranslationsOnly,
         Context $context,
         ?string $selectedCategoryId = null,
-        bool $deleteTestDataBeforeGeneration = false
+        bool $deleteTestDataBeforeGeneration = false,
+        bool $generateReviews = false
     ): void {
         if ($deleteTestDataBeforeGeneration) {
             $this->deleteTestData($context);
@@ -360,6 +364,24 @@ class DataImporter
             'required' => ['products']
         ];
 
+        if ($generateReviews) {
+            $productSchema['properties']['products']['items']['properties']['reviews'] = [
+                'type' => 'ARRAY',
+                'items' => [
+                    'type' => 'OBJECT',
+                    'properties' => [
+                        'reviewerName' => ['type' => 'STRING'],
+                        'title' => ['type' => 'STRING'],
+                        'content' => ['type' => 'STRING'],
+                        'points' => ['type' => 'NUMBER'],
+                        'locale' => ['type' => 'STRING']
+                    ],
+                    'required' => ['reviewerName', 'title', 'content', 'points', 'locale']
+                ]
+            ];
+            $productSchema['properties']['products']['items']['required'][] = 'reviews';
+        }
+
         // Loop through each category and generate products in batches
         $productIndex = 1;
         $localesList = implode(', ', array_values($activeLanguages));
@@ -388,12 +410,13 @@ class DataImporter
                       * Do NOT use the generic name 'Size' (or 'Größe') for physical dimensions, lengths, capacities, or measurements (e.g. '1 meter', '2 meter', '500ml', '15.6 inch'). Instead, use a clear, descriptive property group name that exactly represents the dimension (e.g. 'Length', 'Cable Length', 'Volume', 'Screen Size', 'Height').
                       * Ensure group names and option names are consistently capitalized (use proper Title Case, e.g. 'Size' instead of 'size', 'Length' instead of 'length').
                     - Define a 'variants' array of 2-3 variants. Each variant should specify its 'options' mapping using the respective groupId and optionId strings defined in the properties array, a price, and stock.
-                    Ensure that product names, descriptions, and properties match realistically and translations are high quality, natural, and accurately reflect the same information in each language.",
+                    Ensure that product names, descriptions, and properties match realistically and translations are high quality, natural, and accurately reflect the same information in each language.%s",
                     $category['name'],
                     $category['description'] ?? '',
                     $chunkSize,
                     $localesList,
-                    $localesList
+                    $localesList,
+                    $generateReviews ? "\n                    - Generate between 1 and 10 reviews per product under the 'reviews' array. The reviews must have different ratings (points from 1.0 to 5.0) and comments. Reviewer names, titles, and comments must be written in the language matching the specified locale. The 'locale' field of each review MUST be one of the active locales: " . $localesList . "." : ""
                 );
 
                 $jsonText = $this->geminiClient->generateText($productPrompt, $productSchema);
@@ -416,7 +439,8 @@ class DataImporter
                         $productIndex,
                         $activeLanguages,
                         $defaultLangId,
-                        $context
+                        $context,
+                        $generateReviews
                     );
                     $productIndex++;
                 }
@@ -435,7 +459,8 @@ class DataImporter
         int $productIndex,
         array $activeLanguages,
         ?string $defaultLangId,
-        Context $context
+        Context $context,
+        bool $generateReviews = false
     ): void {
         // Parse properties and create property groups/options
         $variantOptionsMap = []; // GroupId -> [OptionId -> OptionDbId]
@@ -632,6 +657,71 @@ class DataImporter
 
                 $this->productRepository->create([$childPayload], $context);
             }
+        }
+
+        if ($generateReviews && !empty($prodData['reviews']) && is_array($prodData['reviews'])) {
+            $this->importProductReviews($productId, $prodData['reviews'], $visibilities, $activeLanguages, $defaultLangId, $context);
+        }
+    }
+
+    private function importProductReviews(
+        string $productId,
+        array $reviewsData,
+        array $visibilities,
+        array $activeLanguages,
+        ?string $defaultLangId,
+        Context $context
+    ): void {
+        $salesChannelId = null;
+        if (!empty($visibilities)) {
+            $salesChannelId = $visibilities[0]['salesChannelId'];
+        }
+
+        if (!$salesChannelId) {
+            return;
+        }
+
+        $payload = [];
+        foreach ($reviewsData as $review) {
+            $reviewerName = $review['reviewerName'] ?? 'Guest';
+            $title = $review['title'] ?? 'Review';
+            $content = $review['content'] ?? '';
+            $points = isset($review['points']) ? (float)$review['points'] : 5.0;
+            $locale = $review['locale'] ?? '';
+
+            $languageId = array_search($locale, $activeLanguages, true);
+            if (!$languageId) {
+                $languageId = $defaultLangId ?: Defaults::LANGUAGE_SYSTEM;
+            }
+
+            // Simple email generation
+            $emailName = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($reviewerName));
+            $email = $emailName . '@example.com';
+
+            // Generate a random date and time in the past (1 to 60 days ago)
+            $daysAgo = mt_rand(1, 60);
+            $hoursAgo = mt_rand(0, 23);
+            $minutesAgo = mt_rand(0, 59);
+            $createdAt = (new \DateTime())
+                ->sub(new \DateInterval("P{$daysAgo}DT{$hoursAgo}H{$minutesAgo}M"));
+
+            $payload[] = [
+                'id' => Uuid::randomHex(),
+                'productId' => $productId,
+                'salesChannelId' => $salesChannelId,
+                'languageId' => $languageId,
+                'externalUser' => $reviewerName,
+                'externalEmail' => $email,
+                'title' => $title,
+                'content' => $content,
+                'points' => $points,
+                'status' => true, // accepted and visible
+                'createdAt' => $createdAt,
+            ];
+        }
+
+        if (!empty($payload)) {
+            $this->productReviewRepository->create($payload, $context);
         }
     }
 

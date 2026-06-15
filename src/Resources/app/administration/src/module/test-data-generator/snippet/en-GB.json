@@ -21,7 +21,8 @@
             "toastSuccess": "Generation started in the background.",
             "toastError": "Error starting generation: {error}",
             "placeholderCategory": "Select a category to limit product generation to its children (optional)...",
-            "deleteTestDataBeforeGenerationLabel": "Delete all products and product properties before generation (DEV only)"
+            "deleteTestDataBeforeGenerationLabel": "Delete all products and product properties before generation (DEV only)",
+            "generateReviewsLabel": "Add reviews for products"
         }
     }
 }

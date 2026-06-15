@@ -21,7 +21,8 @@
             "toastSuccess": "Generierung im Hintergrund gestartet.",
             "toastError": "Fehler beim Starten der Generierung: {error}",
             "placeholderCategory": "Wählen Sie eine Kategorie, um die Produktgenerierung auf deren Kinder zu beschränken (optional)...",
-            "deleteTestDataBeforeGenerationLabel": "Alle Produkte und Produkteigenschaften vor der Generierung löschen (nur DEV)"
+            "deleteTestDataBeforeGenerationLabel": "Alle Produkte und Produkteigenschaften vor der Generierung löschen (nur DEV)",
+            "generateReviewsLabel": "Bewertungen für Produkte hinzufügen"
         }
     }
 }

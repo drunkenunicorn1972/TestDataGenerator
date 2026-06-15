@@ -46,6 +46,7 @@ class GeneratorController extends AbstractController
         $categoriesCount = isset($data['categoriesCount']) ? (int) $data['categoriesCount'] : 5;
         $productsCount = isset($data['productsCount']) ? (int) $data['productsCount'] : 20;
         $generateImages = isset($data['generateImages']) ? (bool) $data['generateImages'] : false;
+        $generateReviews = isset($data['generateReviews']) ? (bool) $data['generateReviews'] : false;
         $useExistingCategories = isset($data['useExistingCategories']) ? (bool) $data['useExistingCategories'] : false;
         $createTranslationsOnly = isset($data['createTranslationsOnly']) ? (bool) $data['createTranslationsOnly'] : false;
         $selectedCategoryId = isset($data['selectedCategoryId']) && !empty($data['selectedCategoryId']) ? (string) $data['selectedCategoryId'] : null;
@@ -66,7 +67,8 @@ class GeneratorController extends AbstractController
             $useExistingCategories,
             $createTranslationsOnly,
             $selectedCategoryId,
-            $deleteTestDataBeforeGeneration
+            $deleteTestDataBeforeGeneration,
+            $generateReviews
         ));
 
         return new JsonResponse([

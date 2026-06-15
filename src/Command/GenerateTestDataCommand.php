@@ -23,18 +23,26 @@ class GenerateTestDataCommand extends Command
         $this->dataImporter = $dataImporter;
     }
 
+    protected function configure(): void
+    {
+        $this->addOption('reviews', 'r', \Symfony\Component\Console\Input\InputOption::VALUE_NONE, 'Generate product reviews');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $output->writeln('Starting test data generation...');
         $context = Context::createDefaultContext();
         
+        $generateReviews = (bool) $input->getOption('reviews');
+
         $this->dataImporter->importData(
             categoriesCount: 1,
             productsCount: 2,
             generateImages: true,
             useExistingCategories: false,
             createTranslationsOnly: false,
-            context: $context
+            context: $context,
+            generateReviews: $generateReviews
         );
 
         $output->writeln('Finished test data generation!');

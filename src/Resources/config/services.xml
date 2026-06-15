@@ -23,6 +23,7 @@
             <argument type="service" id="Shopware\Core\Content\Media\File\FileSaver"/>
             <argument type="service" id="TestDataGenerator\Service\GeminiClient"/>
             <argument type="service" id="logger"/>
+            <argument type="service" id="product_review.repository"/>
         </service>
 
         <!-- Background task Handler -->

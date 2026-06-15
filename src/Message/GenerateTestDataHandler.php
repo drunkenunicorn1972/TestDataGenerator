@@ -33,7 +33,8 @@ class GenerateTestDataHandler
                 $message->isCreateTranslationsOnly(),
                 $context,
                 $message->getSelectedCategoryId(),
-                $message->isDeleteTestDataBeforeGeneration()
+                $message->isDeleteTestDataBeforeGeneration(),
+                $message->isGenerateReviews()
             );
 
             $this->systemConfigService->set('TestDataGenerator.config.status', 'success');
